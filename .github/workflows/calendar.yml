@@ -1,0 +1,32 @@
+name: calendar
+
+on:
+  schedule:
+    - cron: "40 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency: calendar
+
+jobs:
+  draw:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: python scripts/contrib.py
+      # One commit on a branch of its own, replaced each day, so main keeps only hand-made commits.
+      - name: Publish to the output branch
+        run: |
+          mkdir out && cp assets/contrib-light.svg assets/contrib-dark.svg out/
+          cd out
+          git init -q -b output
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add contrib-light.svg contrib-dark.svg
+          git commit -q -m "Calendar for $(date -u +%F)"
+          git push -q --force "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" output
