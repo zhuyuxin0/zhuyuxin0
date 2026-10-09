@@ -5,8 +5,7 @@
 --fonts holds the OFL fonts from github.com/google/fonts: InstrumentSerif-Italic.ttf,
 InterTight[wght].ttf and JetBrainsMono[wght].ttf. --icons is the icons/ folder of the
 simple-icons npm package (CC0), with data/simple-icons.json beside it. Neither is
-committed; only the drawings are. Also writes scripts/glyphs.json, which contrib.py uses
-to label the calendar without fonts.
+committed; only the drawings are.
 """
 
 import argparse
@@ -305,18 +304,6 @@ def icon_svgs(t: dict) -> dict[str, str]:
     }
 
 
-def glyph_table(mono: Face) -> dict:
-    """Outlines at 1,000 units for the characters contrib.py writes."""
-    table = {}
-    for ch in sorted(set("0123456789, contributionsheaylrpvt")):
-        glyphs, w, _ = mono.run(ch, 1000)
-        pen = SVGPathPen(mono.glyphs, ntos=num)
-        for name, gx, gy in glyphs:
-            mono.glyphs[name].draw(TransformPen(pen, (1, 0, 0, -1, gx, -gy)))
-        table[ch] = {"d": pen.getCommands(), "advance": round(w, 1)}
-    return table
-
-
 def load_icons(folder: Path) -> dict[str, tuple[str, str]]:
     data = json.loads((folder.parent / "data" / "simple-icons.json").read_text(encoding="utf-8"))
     rows = data if isinstance(data, list) else data["icons"]
@@ -352,10 +339,6 @@ def main() -> None:
         (ASSETS / f"stack-{theme}.svg").write_text(stack(f, t, icons, args.stack), encoding="utf-8")
         for name, body in icon_svgs(t).items():
             (ASSETS / f"icon-{name}-{theme}.svg").write_text(body, encoding="utf-8")
-    table = {"themes": THEMES, "glyphs": glyph_table(f["mono"])}
-    (ROOT / "scripts" / "glyphs.json").write_text(
-        json.dumps(table, ensure_ascii=False, indent=1) + "\n", encoding="utf-8"
-    )
     print("\n".join(sorted(p.name for p in ASSETS.glob("*.svg"))))
 
 
